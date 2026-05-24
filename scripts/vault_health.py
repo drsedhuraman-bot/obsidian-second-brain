@@ -173,6 +173,8 @@ def check_empty_folders(vault: Path) -> list:
     for folder in vault.rglob("*/"):
         if any(p in EXCLUDE_DIRS for p in folder.parts):
             continue
+        if not folder.is_dir():
+            continue
         if not list(folder.iterdir()):
             rel = str(folder.relative_to(vault))
             issues.append({
@@ -218,7 +220,10 @@ def check_broken_links(notes: dict, vault: Path) -> list:
 def check_template_leftovers(notes: dict) -> list:
     issues = []
     for rel, note in notes.items():
-        if "Templates/" in rel:
+        # Skip files in any templates folder regardless of case.
+        # Vault conventions vary: Templates/, templates/, etc.
+        parts = rel.split("/")
+        if any(p.lower() == "templates" for p in parts):
             continue
         if TEMPLATE_RE.search(note["content"]):
             issues.append({
